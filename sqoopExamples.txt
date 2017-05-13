@@ -1,0 +1,97 @@
+CREATE TABLE `employees` (
+`emp_no` INTEGER UNSIGNED NOT NULL,
+`fname` VARCHAR(64) not null,
+`lname` VARCHAR(64),
+`salary`DECIMAL(10,2) NOT NULL,
+`last_update_date` DATETIME NOT NULL,
+PRIMARY KEY (`emp_no`)
+);
+INSERT INTO `employees`(`emp_no`, `fname`,`lname`,`salary`,`last_update_date`) VALUES (1, "john","smith",50000,NOW());
+INSERT INTO `employees`(`emp_no`, `fname`,`lname`,`salary`,`last_update_date`) VALUES (2, "harry","yale",60000,NOW());
+INSERT INTO `employees`(`emp_no`, `fname`,`lname`,`salary`,`last_update_date`) VALUES (3, "yukon","andre",70000,NOW());
+INSERT INTO `employees`(`emp_no`, `fname`,`lname`,`salary`,`last_update_date`) VALUES (4, "abhi","dhiman",80000,NOW());
+INSERT INTO `employees`(`emp_no`, `fname`,`lname`,`salary`,`last_update_date`) VALUES (5, "dinesh","dhiman",90000,NOW());
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/sqoop \
+--username sqoop \
+--password sqoop \
+--table employees \
+--hive-import \
+--hive-overwrite
+
+update employees
+set salary= 90000,
+last_update_date=NOW()     
+where emp_no= 2;
+
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/sqoop \
+--username sqoop \
+--password sqoop \
+--table employees \
+--incremental append \
+--check-column last_update_date \
+--target-dir /user/hive/warehouse/employees -m 1 \
+--last-value "2017-03-04 17:00:00.0" 
+
+
+
+
+
+CREATE TABLE employees(
+emp_no bigint,
+fname string,
+lname string,
+salary decimal,
+last_update_date string
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LOCATION '/user/hive/warehouse/employees';
+
+CREATE VIEW employees_vw AS
+SELECT emp_no,fname,lname,salary,last_update_date
+FROM (
+SELECT emp_no,fname,lname,salary,last_update_date,row_number() over (partition by emp_no order by last_update_date desc) as visit_number 
+from employees) employees
+    WHERE visit_number = 1;
+
+
+sqoop job \
+--create sqoop_assignment \
+-- \
+import \
+--connect jdbc:mysql://localhost/sqoop \
+--username sqoop \
+--password sqoop \
+--table employees \
+--incremental append \
+--check-column last_update_date \
+--target-dir /user/hive/warehouse/employees -m 1 \
+--last-value "2017-03-04 19:55:42.0" 
+
+update employees
+set salary= 96000,
+last_update_date=NOW()     
+where emp_no= 6;
+
+sqoop job \
+--create sqoop_assignment_pwfile \
+-- \
+import \
+--connect jdbc:mysql://localhost/sqoop \
+--username sqoop \
+--password-file file:///home/cloudera/training/sqoop/sqoop.password \
+--table employees \
+--incremental append \
+--check-column last_update_date \
+--target-dir /user/hive/warehouse/employees -m 1 \
+--last-value "2017-03-05 14:19:53.0"
+
+
+
+
