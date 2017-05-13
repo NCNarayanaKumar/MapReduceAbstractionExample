@@ -1,0 +1,7 @@
+--MAP SIDE JOIN
+SELECT /*+ MAPJOIN(blog) */ bu.id, bu.users,b.name,b.author
+FROM blogusers as  bu JOIN blog as b ON bu.id = b.id;
+
+----Regular Inner Join
+SELECT bu.id, bu.users,b.name,b.author 
+FROM blogusers as  bu JOIN blog as b ON bu.id = b.id;

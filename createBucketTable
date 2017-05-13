@@ -1,0 +1,20 @@
+CREATE TABLE bucketed_sessionize_txt(
+sessionid string,
+duration_miliseconds string,
+url string,
+useragent string
+)COMMENT 'A bucketed sorted table'
+PARTITIONED BY (userip string)
+CLUSTERED BY (sessionid) SORTED BY (duration_miliseconds) INTO 16 BUCKETS
+STORED AS textfile;
+
+
+set hive.enforce.bucketing = true;
+ 
+INSERT OVERWRITE TABLE bucketed_sessionize_txt PARTITION (userip)
+SELECT sessionid,
+duration_miliseconds,
+url,
+useragent,
+userip
+FROM sessionize_top1000;
